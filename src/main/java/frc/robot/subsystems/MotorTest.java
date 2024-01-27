@@ -13,55 +13,42 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.commands.AGoToPositionCommand;
+import frc.robot.commands.MotorGoToPositionCommand;
+import frc.robot.components.Motor;
 
 public class MotorTest extends SubsystemBase {
+    private Motor m_motorA;
+    private Motor m_motorB;
 
-    //private CANSparkMax motorB = new CANSparkMax(12, MotorType.kBrushless);
-    private CANSparkMax motorA = new CANSparkMax(11, MotorType.kBrushless);
-
-    private double oldA = 0, oldB = 0;
-    private boolean oldIsOn = false;
-    private double oldBothMotor = 0;
-    private boolean oldUseBothMotor;
-    private boolean oldInvertBothMotor;
     private ShuffleboardTab motorTab;
 
-    private SimpleWidget motorOnOff;
-    private SimpleWidget motorAShuffable, motorBShuffable;
-    private SimpleWidget bothMotorShuffable;
-    private SimpleWidget useBothMotor;
-    private SimpleWidget invertBothMotor;
     private SimpleWidget motorARPM;
-    private SimpleWidget motorBRPM;
-
-    private SimpleWidget motorAEnc;
-    private SimpleWidget motorAAbsRPM;
     private SimpleWidget motorARelEnc;
-    private SimpleWidget motorBEnc;
+    private SimpleWidget motorBRelEnc;
 
     private SendableChooser<Command> motorASetPosition;
+    private SendableChooser<Command> motorBSetPosition;
 
     public MotorTest() {
-        motorTab = Shuffleboard.getTab("Motor Controls");
-        motorOnOff = motorTab.add("Are Motors On", false);
-        motorAShuffable = motorTab.add("Motor A Percent", 0);
-        motorBShuffable = motorTab.add("Motor B Percent", 0);
-        bothMotorShuffable = motorTab.add("Set Both Motors", 0);
-        useBothMotor = motorTab.add("Use Both Motor Setting", false);
-        invertBothMotor = motorTab.add("Invert Both Motor Setting", false);
-        motorARPM = motorTab.add("Motor A RPM", 0.0);
-        motorBRPM = motorTab.add("Motor B RPM", 0.0);
+        m_motorA = new Motor(11);
+        m_motorB = new Motor(12);
 
-        motorAEnc = motorTab.add("Motor A ENC", 0.0);
-        motorAAbsRPM = motorTab.add("Motor A ABS RMP", 0.0);
+        motorTab = Shuffleboard.getTab("Motor Controls");
+        motorARPM = motorTab.add("Motor A RPM", 0.0);
+
         motorARelEnc = motorTab.add("Motor A Rel ENC", 0.0);
-        motorBEnc = motorTab.add("Motor B ENC", 0.0);
 
         motorASetPosition = new SendableChooser<Command>();
-        motorASetPosition.addOption("Up", this.aGoToPositionCommand(20.0));
-        motorASetPosition.addOption("Down", this.aGoToPositionCommand(3.0));
+        motorASetPosition.addOption("Up", this.tiltClimberCommand(this.m_motorA, 33));
+        motorASetPosition.addOption("Down", this.tiltClimberCommand(this.m_motorA, 4.5));
         motorTab.add("Motor A Choices", motorASetPosition);
+
+        motorBSetPosition = new SendableChooser<Command>();
+        motorBSetPosition.addOption("Up", this.tiltClimberCommand(this.m_motorB, 230));
+        motorBSetPosition.addOption("Down", this.tiltClimberCommand(this.m_motorB, -40));
+        motorTab.add("Motor B Choices", motorBSetPosition);
+
+        motorBRelEnc = motorTab.add("Motor B Rel ENC", 0.0);
     }
 
     public static enum Direction {
@@ -69,103 +56,30 @@ public class MotorTest extends SubsystemBase {
         DOWN
     };
 
-    public double getRelPosA() {
-        RelativeEncoder relEncA = motorA.getEncoder();
-        return relEncA.getPosition();
-    }
-
-    public double adjustSpeedForDirection(double speed, Direction direction) {
+    public double adjustSpeedForDirection(Motor motor, double speed, Direction direction) {
         switch(direction) {
             case DOWN: {
-                return -1 * speed;
+                return motor.adjustSpeedForDirection(speed, Motor.Direction.COUNTERCLOCKWISE);
             }
             default: {
-                return speed;
+                return motor.adjustSpeedForDirection(speed, Motor.Direction.CLOCKWISE);
             }
         }
     }
 
-    public void setMotorASpeed(double speed) {
-        motorA.set(speed);
-    }
-
-    public Command aGoToPositionCommand(double position) {
-        return new AGoToPositionCommand(this, position, 0.05);
+    public Command tiltClimberCommand(Motor motor, double position) {
+        return new MotorGoToPositionCommand(this, motor, position, 0.3);
     }
 
     public Command getSelected() {
-        return this.motorASetPosition.getSelected();
+        return this.motorBSetPosition.getSelected();
     }
 
     @Override
     public void periodic() {
-        RelativeEncoder relEncA = motorA.getEncoder();
-        SparkAbsoluteEncoder absEncA = motorA.getAbsoluteEncoder(Type.kDutyCycle);
-        this.motorAEnc.getEntry().setDouble(Math.abs(absEncA.getPosition()));
-        this.motorAAbsRPM.getEntry().setDouble(Math.abs(absEncA.getVelocity()));
-        this.motorARelEnc.getEntry().setDouble(Math.abs(relEncA.getPosition()));
-        this.motorARPM.getEntry().setDouble(Math.abs(relEncA.getVelocity()));
+        this.motorARelEnc.getEntry().setDouble(m_motorA.getRelativePosition());
+        this.motorARPM.getEntry().setDouble(m_motorA.getSpeed());
+        this.motorBRelEnc.getEntry().setDouble(m_motorB.getRelativePosition());
 
-        // oldUseBothMotor = useBothMotor.getEntry().getBoolean(false);
-        // oldInvertBothMotor = invertBothMotor.getEntry().getBoolean(false);
-
-        // oldBothMotor = bothMotorShuffable.getEntry().getDouble(0);
-        // if (oldBothMotor > 100) {
-        //     oldBothMotor = 100;
-        // } else if (oldBothMotor < 0) {
-        //     oldBothMotor = 0;
-        // }
-
-        // double A, B;
-        // if (oldUseBothMotor) {
-        //     if (oldInvertBothMotor) {
-        //         A = oldBothMotor;
-        //         B = -1 * oldBothMotor;
-        //     } else {
-        //         A = -1 * oldBothMotor;
-        //         B = oldBothMotor;
-        //     }
-        // } else {
-        //     A = motorAShuffable.getEntry().getDouble(0);
-        //     B = motorBShuffable.getEntry().getDouble(0);
-        // }
-
-        // if (A > 100) {
-        //     A = 100;
-        // } else if (A < -100) {
-        //     A = -100;
-        // }
-
-        // if (B > 100) {
-        //     B = 100;
-        // } else if (B < -100) {
-        //     B = -100;
-        // }
-
-        // oldA = A;
-        // oldB = B;
-
-        // boolean isOn = motorOnOff.getEntry().getBoolean(false);
-
-        // if (isOn) {
-        //     if (!oldIsOn) {
-        //         // Asked to turn on
-        //         oldIsOn = true;
-        //         motorA.set(oldA / 100);
-        //         motorB.set(oldB / 100);
-        //     }
-        // } else {
-        //     if (oldIsOn) {
-        //         // Asked to turn off
-        //         oldIsOn = false;
-        //         motorA.set(0);
-        //         motorB.set(0);
-        //     }
-        // }
-
-        
-
-        // RelativeEncoder absEncB = motorB.getEncoder();
-        // this.motorBRPM.getEntry().setDouble(Math.abs(absEncB.getVelocity()));
     }
 }

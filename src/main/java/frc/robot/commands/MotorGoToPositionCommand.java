@@ -4,6 +4,7 @@
 
 package frc.robot.commands;
 
+import frc.robot.components.Motor;
 import frc.robot.subsystems.MotorTest;
 
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -11,9 +12,10 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
-public class AGoToPositionCommand extends Command {
+public class MotorGoToPositionCommand extends Command {
   @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
   private final MotorTest m_subsystem;
+  private final Motor m_motor;
   private final double m_targetPosition;
   private final double m_maxSpeed;
 
@@ -22,8 +24,9 @@ public class AGoToPositionCommand extends Command {
    *
    * @param subsystem The subsystem used by this command.
    */
-  public AGoToPositionCommand(MotorTest subsystem, double position, double maxSpeed) {
+  public MotorGoToPositionCommand(MotorTest subsystem, Motor motor, double position, double maxSpeed) {
     m_subsystem = subsystem;
+    m_motor = motor;
     m_targetPosition = position;
     m_maxSpeed = maxSpeed;
     // Use addRequirements() here to declare subsystem dependencies.
@@ -31,7 +34,7 @@ public class AGoToPositionCommand extends Command {
   }
 
   public MotorTest.Direction getDirection() {
-    double currentPos = this.m_subsystem.getRelPosA();
+    double currentPos = this.m_motor.getRelativePosition();
     if (currentPos < m_targetPosition) {
       return MotorTest.Direction.UP;
     } else {
@@ -40,7 +43,7 @@ public class AGoToPositionCommand extends Command {
   }
 
   public boolean reachedPos() {
-    double currentPos = this.m_subsystem.getRelPosA();
+    double currentPos = this.m_motor.getRelativePosition();
     return Math.abs(currentPos - m_targetPosition) < 0.1;
   }
 
@@ -48,7 +51,7 @@ public class AGoToPositionCommand extends Command {
   @Override
   public void initialize() {
     if (!this.reachedPos()) {
-      this.m_subsystem.setMotorASpeed(this.m_subsystem.adjustSpeedForDirection(this.m_maxSpeed, this.getDirection()));
+      this.m_motor.setSpeed(this.m_subsystem.adjustSpeedForDirection(this.m_motor, this.m_maxSpeed, this.getDirection()));
     }
   }
 
@@ -60,7 +63,7 @@ public class AGoToPositionCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     System.out.println("STOPPING");
-    this.m_subsystem.setMotorASpeed(0.0);
+    this.m_motor.setSpeed(0.0);
   }
 
   // Returns true when the command should end.
