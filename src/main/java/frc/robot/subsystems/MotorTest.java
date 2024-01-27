@@ -6,6 +6,9 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkAbsoluteEncoder.Type;
 
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
@@ -13,50 +16,84 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.commands.MotorGoToPositionCommand;
+import frc.robot.Constants.MotorConstants;
+import frc.robot.commands.ElevatorGoToPositionCommand;
+import frc.robot.components.ElevatorDirection;
 import frc.robot.components.Motor;
 
 public class MotorTest extends SubsystemBase {
-    private Motor m_motorA;
-    private Motor m_motorB;
+    private static final String MOTOR_A_NAME = "A";
+    private static final String MOTOR_B_NAME = "B";
 
     private ShuffleboardTab motorTab;
 
+    private Motor m_motorA;
+    private Motor m_motorB;
+    private Command m_motorACurrentCommand;
+    private Command m_motorBCurrentCommand;
+
     private SimpleWidget motorARPM;
+    private SimpleWidget motorAVoltage;
     private SimpleWidget motorARelEnc;
+    private SimpleWidget motorBRPM;
+    private SimpleWidget motorBVoltage;
     private SimpleWidget motorBRelEnc;
 
-    private SendableChooser<Command> motorASetPosition;
-    private SendableChooser<Command> motorBSetPosition;
+    private SendableChooser<Command> elevatorSetPosition;
 
     public MotorTest() {
-        m_motorA = new Motor(11);
-        m_motorB = new Motor(12);
-
         motorTab = Shuffleboard.getTab("Motor Controls");
-        motorARPM = motorTab.add("Motor A RPM", 0.0);
 
+        final double ks = 0.00;
+        final double kv = 0.00;
+        m_motorA = new Motor(motorTab, MOTOR_A_NAME, MotorConstants.kDeviceIDMotorA,
+            new ProfiledPIDController(
+                0,
+                0,
+                0,
+                new TrapezoidProfile.Constraints(
+                        1142,
+                        100
+                )
+            ),
+            new SimpleMotorFeedforward(
+                ks,
+                kv
+            )
+        );
+        m_motorACurrentCommand = null;
+        m_motorB = new Motor(motorTab, MOTOR_B_NAME, MotorConstants.kDeviceIDMotorB,
+            new ProfiledPIDController(
+                0,
+                0,
+                0,
+                new TrapezoidProfile.Constraints(
+                        1142,
+                        100
+                )
+            ),
+            new SimpleMotorFeedforward(
+                ks,
+                kv
+            )
+        );
+        m_motorBCurrentCommand = null;
+
+        motorARPM = motorTab.add("Motor A RPM", 0.0);
+        motorAVoltage = motorTab.add("Motor A Voltage", 0.0);
         motorARelEnc = motorTab.add("Motor A Rel ENC", 0.0);
 
-        motorASetPosition = new SendableChooser<Command>();
-        motorASetPosition.addOption("Up", this.tiltClimberCommand(this.m_motorA, 33));
-        motorASetPosition.addOption("Down", this.tiltClimberCommand(this.m_motorA, 4.5));
-        motorTab.add("Motor A Choices", motorASetPosition);
-
-        motorBSetPosition = new SendableChooser<Command>();
-        motorBSetPosition.addOption("Up", this.tiltClimberCommand(this.m_motorB, 230));
-        motorBSetPosition.addOption("Down", this.tiltClimberCommand(this.m_motorB, -40));
-        motorTab.add("Motor B Choices", motorBSetPosition);
-
+        motorBRPM = motorTab.add("Motor B RPM", 0.0);
+        motorBVoltage = motorTab.add("Motor B Voltage", 0.0);
         motorBRelEnc = motorTab.add("Motor B Rel ENC", 0.0);
+
+        elevatorSetPosition = new SendableChooser<Command>();
+        elevatorSetPosition.addOption("Up", this.elevatorClimberCommand(this.m_motorA, MotorConstants.kMaxElevatorUpRelativeEncoderPositionUp).alongWith(this.elevatorClimberCommand(this.m_motorB, MotorConstants.kMaxElevatorUpRelativeEncoderPositionUp)));
+        elevatorSetPosition.addOption("Down", this.elevatorClimberCommand(this.m_motorA, MotorConstants.kMinElevatorDownRelativeEncoderPositionDown).alongWith(this.elevatorClimberCommand(this.m_motorB, MotorConstants.kMinElevatorDownRelativeEncoderPositionDown)));
+        motorTab.add("Elevator Choices", elevatorSetPosition);
     }
 
-    public static enum Direction {
-        UP,
-        DOWN
-    };
-
-    public double adjustSpeedForDirection(Motor motor, double speed, Direction direction) {
+    public double adjustSpeedForDirection(Motor motor, double speed, ElevatorDirection direction) {
         switch(direction) {
             case DOWN: {
                 return motor.adjustSpeedForDirection(speed, Motor.Direction.COUNTERCLOCKWISE);
@@ -67,19 +104,36 @@ public class MotorTest extends SubsystemBase {
         }
     }
 
-    public Command tiltClimberCommand(Motor motor, double position) {
-        return new MotorGoToPositionCommand(this, motor, position, 0.3);
+    public Command elevatorClimberCommand(Motor motor, double position) {
+        if (motor.getName() == MOTOR_A_NAME) {
+            if (this.m_motorACurrentCommand != null) {
+                this.m_motorACurrentCommand.cancel();
+            }
+            this.m_motorACurrentCommand = new ElevatorGoToPositionCommand(this, motor, position);
+            return this.m_motorACurrentCommand;
+        } else if (motor.getName() == MOTOR_B_NAME) {
+            if (this.m_motorBCurrentCommand != null) {
+                this.m_motorBCurrentCommand.cancel();
+            }
+            this.m_motorBCurrentCommand = new ElevatorGoToPositionCommand(this, motor, position);
+            return this.m_motorBCurrentCommand;
+        } else {
+            return null;
+        }
     }
 
     public Command getSelected() {
-        return this.motorBSetPosition.getSelected();
+        return this.elevatorSetPosition.getSelected();
     }
 
     @Override
     public void periodic() {
-        this.motorARelEnc.getEntry().setDouble(m_motorA.getRelativePosition());
         this.motorARPM.getEntry().setDouble(m_motorA.getSpeed());
+        this.motorAVoltage.getEntry().setDouble(m_motorA.getVoltage());
+        this.motorARelEnc.getEntry().setDouble(m_motorA.getRelativePosition());
+        
+        this.motorBRPM.getEntry().setDouble(m_motorB.getSpeed());
+        this.motorBVoltage.getEntry().setDouble(m_motorB.getVoltage());
         this.motorBRelEnc.getEntry().setDouble(m_motorB.getRelativePosition());
-
     }
 }
