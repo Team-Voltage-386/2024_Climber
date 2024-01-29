@@ -61,10 +61,6 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {}
 
   public void teleopInit() {
-    Command command = this.m_robotContainer.getMotorTest().getSelected();
-    if (command != null) {
-      command.schedule();
-    }
   }
 
 
