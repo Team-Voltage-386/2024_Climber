@@ -28,7 +28,7 @@ public final class Constants {
         public static final double kMaxTiltRelativeEncoderPositionUp = 33;
         public static final double kMaxTiltRelativeEncoderPositionDown = 4.5;
 
-        public static final double kMaxElevatorUpRelativeEncoderPositionUp = 100;// 230;
-        public static final double kMinElevatorDownRelativeEncoderPositionDown = 80;// -10;
+        public static final double kMaxElevatorUpRelativeEncoderPositionUp = 180; // 193;
+        public static final double kMinElevatorDownRelativeEncoderPositionDown = -200;// -10;
     }
 }

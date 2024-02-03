@@ -2,7 +2,12 @@ package frc.robot.components;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkAbsoluteEncoder.Type;
+import com.revrobotics.SparkAnalogSensor.Mode;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkAbsoluteEncoder;
+import com.revrobotics.SparkAnalogSensor;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -19,10 +24,16 @@ public class Motor {
     private SimpleWidget m_targetVelocityWidget;
     private SimpleWidget m_pidValWidget;
     private SimpleWidget m_feedForwardValWidget;
-    private SimpleWidget m_goalPosition;
+    private SimpleWidget m_outputCurrent;
+    private SimpleWidget m_pidSetpointSpeed;
+    private SimpleWidget m_pidSetpointPosition;
+    private SimpleWidget m_analogSensorPosition;
+    private SimpleWidget m_relativeEncoderPosition;
 
     public Motor(ShuffleboardTab motorTab, String motorName, int deviceId, ProfiledPIDController PIDController, SimpleMotorFeedforward feedforward) {
         m_motor = new CANSparkMax(deviceId, MotorType.kBrushless);
+        m_motor.setSmartCurrentLimit(40);
+        m_motor.setIdleMode(IdleMode.kBrake);
         m_PIDController = PIDController;
         m_feedforward = feedforward;
         m_motorName = motorName;
@@ -30,7 +41,11 @@ public class Motor {
         m_targetVelocityWidget = motorTab.add("Motor " + m_motorName + " Target Velocity", 0.0);
         m_pidValWidget = motorTab.add("Motor " + m_motorName + " PID", 0.0);
         m_feedForwardValWidget = motorTab.add("Motor " + m_motorName + " Feed Forward", 0.0);
-        m_goalPosition = motorTab.add("Motor " + m_motorName + " Goal Position", 0.0);
+        m_outputCurrent = motorTab.add("Motor " + m_motorName + " Output Current", 0.0);
+        m_pidSetpointSpeed = motorTab.add("Motor " + m_motorName + " PID Setpoint Speed", 0.0);
+        m_pidSetpointPosition = motorTab.add("Motor " + m_motorName + " PID Setpoint Position", 0.0);
+        m_analogSensorPosition = motorTab.add("Motor " + m_motorName + " Analog Sensor Position", 0.0);
+        m_relativeEncoderPosition = motorTab.add("Motor " + m_motorName + " Rel ENC Position", 0.0);
     }
 
     public static enum Direction {
@@ -60,6 +75,10 @@ public class Motor {
 
     public void setSpeed(double speed) {
         m_motor.set(speed);
+    }
+
+    public void stop() {
+        this.m_motor.stopMotor();
     }
 
     public double getSpeed() {
@@ -106,8 +125,15 @@ public class Motor {
     public void updateWidgets(double goalPosition, MotorGoToPositionInfo goToPositionInfo) {
         this.m_currentVelocityWidget.getEntry().setDouble(this.getSpeed());
         this.m_targetVelocityWidget.getEntry().setDouble(this.getTargetVelocity());
-        this.m_goalPosition.getEntry().setDouble(goalPosition);
+        this.m_outputCurrent.getEntry().setDouble(this.m_motor.getOutputCurrent());
+        this.m_pidSetpointSpeed.getEntry().setDouble(m_PIDController.getSetpoint().velocity);
+        this.m_pidSetpointPosition.getEntry().setDouble(m_PIDController.getSetpoint().position);
         this.m_pidValWidget.getEntry().setDouble(this.getPidVal(goalPosition));
         this.m_feedForwardValWidget.getEntry().setDouble(this.getFFVal(goToPositionInfo));
+
+        SparkAnalogSensor analogSensor = this.m_motor.getAnalog(Mode.kAbsolute);
+        this.m_analogSensorPosition.getEntry().setDouble(analogSensor.getPosition());
+
+        this.m_relativeEncoderPosition.getEntry().setDouble(this.getRelativePosition());
     }
 }

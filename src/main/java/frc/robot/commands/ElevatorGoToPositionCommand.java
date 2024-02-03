@@ -89,15 +89,15 @@ public class ElevatorGoToPositionCommand extends Command {
         break;
       }
     }
-    // if (!this.reachedPos()) {
-    //   this.m_motor.setSpeed(this.m_subsystem.adjustSpeedForDirection(this.m_motor, 0.2, this.m_direction));
-    // }
+    if (!this.reachedPos()) {
+      this.m_motor.setSpeed(this.m_subsystem.adjustSpeedForDirection(this.m_motor, 0.2, this.m_direction));
+    }
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    this.m_motor.goToPosition(m_targetPosition, m_goToPositionInfo, m_subsystem.adjustSpeedForDirection(m_motor, 1.0, m_direction));
+    //this.m_motor.goToPosition(m_targetPosition, m_goToPositionInfo, m_subsystem.adjustSpeedForDirection(m_motor, 1.0, m_direction));
     this.m_motor.updateWidgets(m_targetPosition, m_goToPositionInfo);
   }
 
@@ -105,7 +105,7 @@ public class ElevatorGoToPositionCommand extends Command {
   @Override
   public void end(boolean interrupted) {
     System.out.println("STOPPING");
-    this.m_motor.setSpeed(0.0);
+    this.m_motor.stop();
   }
 
   // Returns true when the command should end.

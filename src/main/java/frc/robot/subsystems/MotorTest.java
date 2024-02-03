@@ -1,19 +1,13 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
-import com.revrobotics.SparkAbsoluteEncoder;
-import com.revrobotics.SparkAbsoluteEncoder.Type;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.MotorConstants;
@@ -32,23 +26,17 @@ public class MotorTest extends SubsystemBase {
     private Command m_motorACurrentCommand;
     private Command m_motorBCurrentCommand;
 
-    private SimpleWidget motorARPM;
-    private SimpleWidget motorAVoltage;
-    private SimpleWidget motorARelEnc;
-    private SimpleWidget motorBRPM;
-    private SimpleWidget motorBVoltage;
-    private SimpleWidget motorBRelEnc;
-
     private SendableChooser<Command> elevatorSetPosition;
 
     public MotorTest() {
         motorTab = Shuffleboard.getTab("Motor Controls");
 
+        final double kp = 0.00;
         final double ks = 0.00;
         final double kv = 0.00;
         m_motorA = new Motor(motorTab, MOTOR_A_NAME, MotorConstants.kDeviceIDMotorA,
             new ProfiledPIDController(
-                0,
+                kp,
                 0,
                 0,
                 new TrapezoidProfile.Constraints(
@@ -64,7 +52,7 @@ public class MotorTest extends SubsystemBase {
         m_motorACurrentCommand = null;
         m_motorB = new Motor(motorTab, MOTOR_B_NAME, MotorConstants.kDeviceIDMotorB,
             new ProfiledPIDController(
-                0,
+                kp,
                 0,
                 0,
                 new TrapezoidProfile.Constraints(
@@ -78,14 +66,6 @@ public class MotorTest extends SubsystemBase {
             )
         );
         m_motorBCurrentCommand = null;
-
-        motorARPM = motorTab.add("Motor A RPM", 0.0);
-        motorAVoltage = motorTab.add("Motor A Voltage", 0.0);
-        motorARelEnc = motorTab.add("Motor A Rel ENC", 0.0);
-
-        motorBRPM = motorTab.add("Motor B RPM", 0.0);
-        motorBVoltage = motorTab.add("Motor B Voltage", 0.0);
-        motorBRelEnc = motorTab.add("Motor B Rel ENC", 0.0);
 
         elevatorSetPosition = new SendableChooser<Command>();
         elevatorSetPosition.addOption("Up", this.elevatorClimberCommand(this.m_motorA, MotorConstants.kMaxElevatorUpRelativeEncoderPositionUp).alongWith(this.elevatorClimberCommand(this.m_motorB, MotorConstants.kMaxElevatorUpRelativeEncoderPositionUp)));
@@ -128,12 +108,5 @@ public class MotorTest extends SubsystemBase {
 
     @Override
     public void periodic() {
-        this.motorARPM.getEntry().setDouble(m_motorA.getSpeed());
-        this.motorAVoltage.getEntry().setDouble(m_motorA.getVoltage());
-        this.motorARelEnc.getEntry().setDouble(m_motorA.getRelativePosition());
-        
-        this.motorBRPM.getEntry().setDouble(m_motorB.getSpeed());
-        this.motorBVoltage.getEntry().setDouble(m_motorB.getVoltage());
-        this.motorBRelEnc.getEntry().setDouble(m_motorB.getRelativePosition());
     }
 }
