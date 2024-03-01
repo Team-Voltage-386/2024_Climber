@@ -30,5 +30,9 @@ public final class Constants {
 
         public static final double kMaxElevatorUpRelativeEncoderPositionUp = 180; // 193;
         public static final double kMinElevatorDownRelativeEncoderPositionDown = -200;// -10;
+
+        public static final int kTrapExtendMotorID = 99;
+        public static final int kTrapIntakeMotorID = 99;
+        public static final int kTrapIntakeMotorPDH = 99;
     }
 }

@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 
 /** An example command that uses an example subsystem. */
 public class ElevatorGoToPositionCommand extends Command {
-  @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+  @SuppressWarnings({ "PMD.UnusedPrivateField", "PMD.SingularField" })
   private final MotorTest m_subsystem;
   private final Motor m_motor;
   private final double m_targetPosition;
@@ -41,7 +41,8 @@ public class ElevatorGoToPositionCommand extends Command {
 
   public ElevatorDirection getDirection() {
     double currentPosition = this.m_motor.getRelativePosition();
-    System.out.printf("CURRENT POS: %f, TARGET POS: %f. CURRENT < TARGET: %b\n", currentPosition, m_targetPosition, currentPosition < m_targetPosition);
+    System.out.printf("CURRENT POS: %f, TARGET POS: %f. CURRENT < TARGET: %b\n", currentPosition, m_targetPosition,
+        currentPosition < m_targetPosition);
     if (currentPosition < m_targetPosition) {
       return ElevatorDirection.UP;
     } else {
@@ -97,7 +98,8 @@ public class ElevatorGoToPositionCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    //this.m_motor.goToPosition(m_targetPosition, m_goToPositionInfo, m_subsystem.adjustSpeedForDirection(m_motor, 1.0, m_direction));
+    // this.m_motor.goToPosition(m_targetPosition, m_goToPositionInfo,
+    // m_subsystem.adjustSpeedForDirection(m_motor, 1.0, m_direction));
     this.m_motor.updateWidgets(m_targetPosition, m_goToPositionInfo);
   }
 

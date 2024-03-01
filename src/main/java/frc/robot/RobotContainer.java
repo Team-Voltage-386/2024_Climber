@@ -5,12 +5,12 @@
 package frc.robot;
 
 import frc.robot.Constants.OperatorConstants;
-import frc.robot.subsystems.MotorTest;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.TrapSubsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.commands.ElevatorUpCommand;
+import frc.robot.commands.ElevatorDownCommand;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -23,11 +23,11 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final MotorTest m_motors = new MotorTest();
-
+  private final TrapSubsystem m_trapSubsystem = new TrapSubsystem();
+  private final ElevatorSubsystem m_ElevatorSubsystem = new ElevatorSubsystem();
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
-  XboxController m_driverController = new XboxController(
+  CommandXboxController m_driverController = new CommandXboxController(
       OperatorConstants.kDriverControllerPort);
 
   /**
@@ -38,9 +38,9 @@ public class RobotContainer {
     configureBindings();
   }
 
-  public MotorTest getMotorTest() {
-    return this.m_motors;
-  }
+  // public MotorTest getMotorTest() {
+  // return this.m_motors;
+  // }
 
   /**
    * Use this method to define your trigger->command mappings. Triggers can be
@@ -57,6 +57,13 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    // Through testing, we found that it is practical to only run the snowblower
+    // motor at the maximum percentage
+    m_driverController.b().whileTrue(m_trapSubsystem.trapExtendCommand(1));
+    m_driverController.x().whileTrue(m_trapSubsystem.trapExtendCommand(-1));
+
+    m_driverController.y().whileTrue(new ElevatorUpCommand(m_ElevatorSubsystem));
+    m_driverController.a().whileTrue(new ElevatorDownCommand(m_ElevatorSubsystem));
   }
 
   /**
