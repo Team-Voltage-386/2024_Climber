@@ -18,22 +18,25 @@ public class ElevatorDownCommand extends Command {
 
     @Override
     public void initialize() {
-        m_subsystem.setElevatorMotorsVoltage(m_motorVoltage);
+        if (!m_subsystem.isLowerLimitTriggered()) {
+            m_subsystem.setElevatorMotorsVoltage(m_motorVoltage);
+        }
     }
 
     @Override
     public void execute() {
-
     }
 
     @Override
     public void end(boolean interrupted) {
-        m_subsystem.setElevatorMotorsVoltage(0.25);
+        m_subsystem.setElevatorMotorsVoltage(0.0);
+        // May need to sometimes leave it at a certain voltage if we aren't planning to
+        // go down to the bottom stationary hooks
     }
 
     @Override
     public boolean isFinished() {
-        return m_subsystem.isUpperLimitTriggered();
+        return m_subsystem.isLowerLimitTriggered();
     }
 
 }
